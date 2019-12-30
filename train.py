@@ -1,6 +1,7 @@
 from __future__ import print_function
 import os
 import random
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -10,6 +11,7 @@ import torch.utils.data
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
+from torch.utils.tensorboard import SummaryWriter
 
 from .model import Generator, Discriminator
 
@@ -30,23 +32,6 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
     netG = Generator(nz=nz)
     netD = Discriminator()
     criterion = nn.BCELoss()
-    
-    # setup optimizer
-    optimizerD = optim.Adam(netD.parameters(), lr=lr, betas=(0.5, 0.999))
-    optimizerG = optim.Adam(netG.parameters(), lr=lr, betas=(0.5, 0.999))
-
-    start_iter = 0
-
-    if resume and os.path.exists(ckpt_path):
-        ckpt = torch.load(ckpt_path, map_location='cpu')
-        start_iter = ckpt['iteration']
-        netG.load_state_dict(ckpt['netG'])
-        netD.load_state_dict(ckpt['netD'])
-        optimizerG.load_state_dict(ckpt['optimizerG'])
-        optimizerD.load_state_dict(ckpt['optimizerD'])
-    else:
-        netG.apply(weights_init)
-        netD.apply(weights_init)
 
     if cuda:
         cudnn.benchmark = True
@@ -56,6 +41,26 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
 
     netG.to(device)
     netD.to(device)
+
+    # setup optimizer
+    optimizerD = optim.Adam(netD.parameters(), lr=lr, betas=(0.5, 0.999))
+    optimizerG = optim.Adam(netG.parameters(), lr=lr, betas=(0.5, 0.999))
+
+    start_iter = 0
+
+    writer = SummaryWriter()
+
+    if resume and os.path.exists(ckpt_path):
+        # ckpt = torch.load(ckpt_path, map_location='cpu')
+        ckpt = torch.load(ckpt_path)
+        start_iter = ckpt['iteration']
+        netG.load_state_dict(ckpt['netG'])
+        netD.load_state_dict(ckpt['netD'])
+        optimizerG.load_state_dict(ckpt['optimizerG'])
+        optimizerD.load_state_dict(ckpt['optimizerD'])
+    else:
+        netG.apply(weights_init)
+        netD.apply(weights_init)
 
     fixed_noise = torch.randn(batch_size, nz, 1, 1, device=device)
     real_label = 1
@@ -75,7 +80,7 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
         # train with real
         netD.zero_grad()
         real_cpu = data[0].to(device)
-        label = torch.full((batch_size,), real_label, device=device)
+        label = torch.full((real_cpu.size(0),), real_label, device=device)
 
         output = netD(real_cpu)
         errD_real = criterion(output, label)
@@ -83,7 +88,7 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
         D_x = output.mean().item()
 
         # train with fake
-        noise = torch.randn(batch_size, nz, 1, 1, device=device)
+        noise = torch.randn(real_cpu.size(0), nz, 1, 1, device=device)
         fake = netG(noise)
         label.fill_(fake_label)
         output = netD(fake.detach())
@@ -104,8 +109,23 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
         D_G_z2 = output.mean().item()
         optimizerG.step()
 
-        if iteration % 20 == 0:
-            print('%d/%d errD_real:%.2e errD_fake:%.2e errG:%.2e' % (iteration, max_iter, errD_real.item(), errD_fake.item(), errG.item()))
+        if iteration % 200 == 0:
+            print('%d/%d errD_real:%.2e errD_fake:%.2e errG:%.2e \r' % (iteration, max_iter, errD_real.item(), errD_fake.item(), errG.item()), end='')
+
+        if iteration % 1000 == 0:
+            writer.add_scalar('anime-dcgan/errD_real', errD_real.item(), iteration)
+            writer.add_scalar('anime-dcgan/errD_fake', errD_fake.item(), iteration)
+            writer.add_scalar('anime-dcgan/errG', errG.item(), iteration)
+
+            netG.eval()
+            with torch.no_grad():
+              grid = vutils.make_grid((real_cpu * 255).byte(), range=(0, 255), scale_each=True)
+              writer.add_image('real', grid, iteration)
+              fake = netG(fixed_noise)
+              grid = vutils.make_grid((fake * 255).byte(), range=(0, 255), scale_each=True)
+              writer.add_image('fixed_fake', grid, iteration)
+            netG.train()
+
 
         if iteration > 0 and iteration % save_iter == 0:
             save(netD, netG, optimizerD, optimizerG, iteration, ckpt_path)
