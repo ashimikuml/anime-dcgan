@@ -33,7 +33,7 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, ndf=64):
+    def __init__(self, ndf=64, nc=3):
         super(Discriminator, self).__init__()
         self.main = nn.Sequential(
             # input is (nc) x 64 x 64

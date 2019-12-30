@@ -57,7 +57,7 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
     netG.to(device)
     netD.to(device)
 
-    fixed_noise = torch.randn(opt.batchSize, nz, 1, 1, device=device)
+    fixed_noise = torch.randn(batch_size, nz, 1, 1, device=device)
     real_label = 1
     fake_label = 0
 
@@ -68,6 +68,7 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
         except StopIteration:
             dataloader_iter = iter(dataloader)
             data = dataloader_iter.next()
+        data = torch.cat(data)
         data = data.to(device)
 
         ############################
@@ -104,6 +105,9 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
         errG.backward()
         D_G_z2 = output.mean().item()
         optimizerG.step()
+
+        if iteration % 20:
+            print('%d/%d errD_real:%.2e errD_fake:%.2e errG:%.2e' % (iteration, max_iter, errD_real.item(), errD_fake.item(), errG.item()))
 
         if iteration % save_iter:
             save(netD, netG, optimizerD, optimizerG, iteration, ckpt_path)
