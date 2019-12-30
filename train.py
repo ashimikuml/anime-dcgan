@@ -68,8 +68,6 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
         except StopIteration:
             dataloader_iter = iter(dataloader)
             data = dataloader_iter.next()
-        data = torch.cat(data)
-        data = data.to(device)
 
         ############################
         # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
@@ -106,10 +104,10 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
         D_G_z2 = output.mean().item()
         optimizerG.step()
 
-        if iteration % 20:
+        if iteration % 20 == 0:
             print('%d/%d errD_real:%.2e errD_fake:%.2e errG:%.2e' % (iteration, max_iter, errD_real.item(), errD_fake.item(), errG.item()))
 
-        if iteration % save_iter:
+        if iteration > 0 and iteration % save_iter == 0:
             save(netD, netG, optimizerD, optimizerG, iteration, ckpt_path)
 
 
@@ -124,7 +122,7 @@ def weights_init(m):
 
 def save(netD, netG, optimizerD, optimizerG, iteration, ckpt_path):
      torch.save({
-        'iteration ': iteration,
+        'iteration': iteration,
         'netD': netD.state_dict(),
         'netG': netG.state_dict(),
         'optimizerD' : optimizerD.state_dict(),
