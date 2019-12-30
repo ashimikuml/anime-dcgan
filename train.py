@@ -11,7 +11,7 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 
-from model import Generator, Discriminator
+from .model import Generator, Discriminator
 
 
 def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64, manual_seed=None, cuda=True, resume=True):
