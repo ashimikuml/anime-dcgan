@@ -118,7 +118,7 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 
-def save(netD, netG, optimizerD, optimizerG, iteration, ckpt_path)
+def save(netD, netG, optimizerD, optimizerG, iteration, ckpt_path):
      torch.save({
         'iteration ': iteration,
         'netD': netD.state_dict(),
