@@ -110,7 +110,7 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
         optimizerG.step()
 
         if iteration % 200 == 0:
-            print('%d/%d errD_real:%.2e errD_fake:%.2e errG:%.2e \r' % (iteration, max_iter, errD_real.item(), errD_fake.item(), errG.item()), end='')
+            print('%d/%d errD_real:%.2e errD_fake:%.2e errG:%.2e' % (iteration, max_iter, errD_real.item(), errD_fake.item(), errG.item()))
 
         if iteration % 1000 == 0:
             writer.add_scalar('anime-dcgan/errD_real', errD_real.item(), iteration)
