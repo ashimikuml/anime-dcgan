@@ -126,6 +126,8 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
               writer.add_image('fixed_fake', grid, iteration)
             netG.train()
 
+            writer.flush()
+
 
         if iteration > 0 and iteration % save_iter == 0:
             save(netD, netG, optimizerD, optimizerG, iteration, ckpt_path)
