@@ -25,7 +25,7 @@ def make_dataset(path):
 
 def float2byte(tensor):
     tensor = tensor * 0.55 + 0.5
-    tesnor = torch.clamp(tensor, 0, 1) * 255
+    tensor = torch.clamp(tensor, 0, 1) * 255
     tensor = tensor.byte()
     return tensor
 
