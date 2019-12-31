@@ -9,12 +9,24 @@ import torch.backends.cudnn as cudnn
 import torch.optim as optim
 import torch.utils.data
 import torchvision.datasets as dset
-import torchvision.transforms as transforms
+from torchvision.transforms import Compose, Resize, ToTensor, Normalize
 import torchvision.utils as vutils
 from torch.utils.tensorboard import SummaryWriter
 
 from .model import Generator, Discriminator
 
+
+def make_dataset(path):
+    transform = Compose([Resize((64, 64)), ToTensor(), Normalize(mean=[0.5, 0.5, 0.5], std=[0.55, 0.55, 0.55])])
+    dataset = torchvision.datasets.DatasetFolder(path, default_loader, extensions=('jpg',), transform=transform)
+    return dataset
+
+
+def float2byte(tensor):
+    tensor = tensor * 0.55 + 0.5
+    tesnor = torch.clamp(tensor, 0, 1) * 255
+    tensor = tensor.byte()
+    return tensor
 
 def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64, manual_seed=None, cuda=True, resume=True):
     manual_seed = None
@@ -119,10 +131,10 @@ def train(dataset, max_iter, ckpt_path, save_iter=5000, lr=0.0002, batch_size=64
 
             netG.eval()
             with torch.no_grad():
-              grid = vutils.make_grid((real_cpu * 255).byte(), range=(0, 255), scale_each=True)
+              grid = vutils.make_grid(float2byte(real_cpu), range=(0, 255), scale_each=True)
               writer.add_image('real', grid, iteration)
               fake = netG(fixed_noise)
-              grid = vutils.make_grid((fake * 255).byte(), range=(0, 255), scale_each=True)
+              grid = vutils.make_grid(float2byte(fake), range=(0, 255), scale_each=True)
               writer.add_image('fixed_fake', grid, iteration)
             netG.train()
 
