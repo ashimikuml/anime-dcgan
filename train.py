@@ -10,6 +10,7 @@ import torch.optim as optim
 import torch.utils.data
 import torchvision.datasets as dset
 from torchvision.transforms import Compose, Resize, ToTensor, Normalize
+from torchvision.datasets.folder import default_loader
 import torchvision.utils as vutils
 from torch.utils.tensorboard import SummaryWriter
 
