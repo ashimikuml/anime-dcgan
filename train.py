@@ -19,7 +19,7 @@ from .model import Generator, Discriminator
 
 def make_dataset(path):
     transform = Compose([Resize((64, 64)), ToTensor(), Normalize(mean=[0.5, 0.5, 0.5], std=[0.55, 0.55, 0.55])])
-    dataset = torchvision.datasets.DatasetFolder(path, default_loader, extensions=('jpg',), transform=transform)
+    dataset = dset.DatasetFolder(path, default_loader, extensions=('jpg',), transform=transform)
     return dataset
 
 
